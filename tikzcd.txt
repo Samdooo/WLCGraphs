@@ -1,0 +1,13 @@
+{} \arrow{r} & {}\\
+        {} \arrow{r} \arrow{ru} & {}\\
+        {} \arrow{r} \arrow{ru} \arrow{rd} & {}\\
+        {} \arrow{r} \arrow{ru} \arrow{rd} & {}\\
+        {} \arrow{r} \arrow{ru} & {}\\
+        {} \arrow{r} & {}\\
+        {} \arrow{r} & {}\\
+        {} \arrow{ru} & \\
+        {} \arrow{r} \arrow{rdd} & {}\\
+        {} \arrow{r} \arrow{rdd} & {}\\
+        {} \arrow{rdd} \arrow{ruu} \arrow{ru} & {}\\
+        {} \arrow{r} & {}\\
+        {} \arrow{r} \arrow{ru} \arrow{ruu} & {}

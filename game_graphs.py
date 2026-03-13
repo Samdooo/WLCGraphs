@@ -179,6 +179,63 @@ def CAP(P1, P2):
         return GameIntersect(P1(G), P2(G))
     return Apply
 
+# assumes all arrows go left -> right
+def ParseTikzcdGame(path):
+    G = GameGraph([], [], [])
+    with open(path,"r") as inFile:
+        txt = inFile.read()
+    CHARS = "\\arrow{lrdu}&"
+    txt = "".join([c for c in txt if c in CHARS])
+    line = 1
+    left = True
+    i = 0
+    while i < len(txt):
+        if (txt[i] == '&'):
+            left = not left
+            i += 1
+            continue
+        if (txt[i] == '{'):
+            if left:
+                G.left.append("a" + str(line))
+            else:
+                G.right.append("b" + str(line))
+            i += 2
+            continue
+        if (txt[i:i+2] == "\\\\"):
+            line += 1
+            left = True
+            i += 2
+            continue
+        if (txt[i:i+len("\\arrow")] == "\\arrow"):
+            i += len("\\arrow") + 1
+            toLine = line
+            while txt[i] != '}':
+                if txt[i] == 'u':
+                    toLine -= 1
+                if txt[i] == 'd':
+                    toLine += 1
+                i += 1
+            i += 1
+            G.edges.append(("a" + str(line), "b" + str(toLine)))
+    G.left.reverse()
+    G.right.reverse()
+    return G
+
+def GameToTikzcd(G: GameGraph):
+    txt = ""
+    for i in range(len(G.left)):
+        txt += "{} "
+        for j in range(len(G.right)):
+            if ((G.left[i], G.right[j]) in G.edges):
+                txt += "\\arrow{r" + abs(i-j)*("u" if j<i else "d") + "} "
+        txt += "& "
+        if i < len(G.right):
+            txt += "{}"
+        txt += "\\\\\n"
+    for i in range(len(G.right) - len(G.left)):
+        txt += " & {}\\\\\\n"
+    return txt    
+
 def RandomGame(minSide, maxSide, edgeProb):
     l = random.randint(minSide, maxSide)
     r = random.randint(minSide, maxSide)
@@ -196,31 +253,45 @@ def RandomGame(minSide, maxSide, edgeProb):
 CRC = CIR(IRC)
 
 #P = CAP(CIR(CAP(IRC, ES)), CIR(CAP(CRC, ES)))
-P = CAP(IRC, ES)
+P = CAP(CRC, ES)
 
-#its = 0
-#while True:
-#    G = RandomGame(3, 5, 0.25)
-#    Gs = [G]
-#    while True:
-#        nextG = P(Gs[-1])
-#        if not nextG.Equals(Gs[-1]):
-#            Gs.append(nextG)
-#        else:
-#            break
-#    #if (len(Gs[-1].left) == 0):
-#    #    break
-#    if (len(Gs) >= 3):
-#        break
-#    its += 1
-#    print(f"Its: {its}")
+its = 0
+while False:
+    G = RandomGame(4, 5, 0.2)
+    if not nx.is_connected(G.GetNxGraph()):
+        continue
+    Gs = [G]
+    while True:
+        nextG = P(Gs[-1])
+        if not nextG.Equals(Gs[-1]):
+            Gs.append(nextG)
+        else:
+            break
+    if (len(Gs[-1].left) == 1 and len(Gs[-1].right) == 1):
+        continue
+    #if (len(Gs[-1].left) == 0):
+    #    break
+    if (len(Gs) >= 3):
+        break
+    its += 1
+    print(f"Its: {its}")
 
 # IRC and ES necessary: 
-G = GameTimes(1, 1) + GameGraph(["a1", "a2"], ["b1"], [("a1", "b1"), ("a2", "b1")]) + GameGraph(["a1", "a2", "a3"], ["b1", "b2"], [("a1", "b1"), ("a2", "b1"), ("a3", "b1"), ("a2", "b2"), ("a3", "b2")])
+#G = GameTimes(1, 1) + GameGraph(["a1", "a2"], ["b1"], [("a1", "b1"), ("a2", "b1")]) + GameGraph(["a1", "a2", "a3"], ["b1", "b2"], [("a1", "b1"), ("a2", "b1"), ("a3", "b1"), ("a2", "b2"), ("a3", "b2")])
 
-#G = GameZ(14)
+#G = GameZ(15)
 
 #G = RandomGame(2, 20, 0.5)
+
+#G = GameTimes(1, 3) + GameTimes(1, 2) + GameTimes(2, 0)
+#G.edges.append(("aba1", "aab3"))
+#G.edges.append(("ba2", "abb2"))
+#G.edges.append(("ba1", "abb1"))
+
+G = ParseTikzcdGame("tikzcd.txt")
+print(G.left)
+
+print(GameToTikzcd(G))
 
 Gs = [G]
 while True:
