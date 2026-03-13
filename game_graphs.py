@@ -1,6 +1,7 @@
 import networkx as nx
 from networkx.algorithms import isomorphism
 import matplotlib.pyplot as plt
+import random
 
 class GameGraph:
     def __init__(self, left, right, edges):
@@ -47,10 +48,11 @@ class GameGraph:
             rightEquivs.append(equiv)
         return leftEquivs, rightEquivs
     
-    def Draw(self):
+    def Draw(self, ax=None, pos=None):
         nxg = self.GetNxGraph()
-        pos = nx.bipartite_layout(nxg, G.left)
-        nx.draw(G.GetNxGraph(), pos, with_labels=True, node_color='skyblue', edge_color='gray')
+        if (pos == None):
+            pos = nx.bipartite_layout(nxg, self.left)
+        nx.draw(nxg, pos, ax=ax, with_labels=True, node_color='skyblue', edge_color='gray')
         
     def __add__(self, G2):
         return GameAdd(self, G2)
@@ -99,11 +101,11 @@ def ES(G: GameGraph):
                     break
             if winning:
                 for l in le:
-                    newGraph.left.append(l)
+                    if l not in newGraph.left:
+                        newGraph.left.append(l)
                 for r in re:
                     if r not in newGraph.right:
                         newGraph.right.append(r)
-                break
     for e in G.edges:
         if e[0] in newGraph.left and e[1] in newGraph.right:
             newGraph.edges.append(e)
@@ -177,25 +179,65 @@ def CAP(P1, P2):
         return GameIntersect(P1(G), P2(G))
     return Apply
 
+def RandomGame(minSide, maxSide, edgeProb):
+    l = random.randint(minSide, maxSide)
+    r = random.randint(minSide, maxSide)
+    left = ["a" + str(i) for i in range(1, l+1)]
+    right = ["b" + str(i) for i in range(1, r+1)]
+    edges = []
+    for i in range(l):
+        for j in range(r):
+            if (random.random() <= edgeProb):
+                edges.append(("a" + str(i+1), "b" + str(j+1)))
+    return GameGraph(left, right, edges)
+
 #################
 
 CRC = CIR(IRC)
 
-G = GameTimes(1, 1) + GameTimes(2, 2) + GameGraph(["a1", "a2", "a3", "a4"], ["b1", "b2"], [("a1", "b1"), ("a2", "b1"), ("a3", "b1"), ("a2", "b2"), ("a3", "b2"), ("a4", "b2")])
+#P = CAP(CIR(CAP(IRC, ES)), CIR(CAP(CRC, ES)))
+P = CAP(IRC, ES)
 
-#G1 = GameGraph(["a1", "a2"], ["b1", "b2"], [("a1", "b2")])
-#G2 = GameGraph(["a1", "a3"], ["b1", "b2"], [("a1", "b2"), ("a3", "b1")])
-#G = GameIntersect(G1, G2)
+#its = 0
+#while True:
+#    G = RandomGame(3, 5, 0.25)
+#    Gs = [G]
+#    while True:
+#        nextG = P(Gs[-1])
+#        if not nextG.Equals(Gs[-1]):
+#            Gs.append(nextG)
+#        else:
+#            break
+#    #if (len(Gs[-1].left) == 0):
+#    #    break
+#    if (len(Gs) >= 3):
+#        break
+#    its += 1
+#    print(f"Its: {its}")
 
-print(G.GetEquivs())
+# IRC and ES necessary: 
+G = GameTimes(1, 1) + GameGraph(["a1", "a2"], ["b1"], [("a1", "b1"), ("a2", "b1")]) + GameGraph(["a1", "a2", "a3"], ["b1", "b2"], [("a1", "b1"), ("a2", "b1"), ("a3", "b1"), ("a2", "b2"), ("a3", "b2")])
 
-G.Draw()
-plt.show()
+#G = GameZ(14)
 
-G = ES(G)
-G.Draw()
-plt.show()
+#G = RandomGame(2, 20, 0.5)
 
-G = ES(G)
-G.Draw()
+Gs = [G]
+while True:
+    nextG = P(Gs[-1])
+    if not nextG.Equals(Gs[-1]):
+        Gs.append(nextG)
+    else:
+        break
+N = len(Gs)
+
+fig, axes = plt.subplots(1, N, figsize=(8, 6))
+if N == 1:
+    axes = [axes]
+
+pos = nx.bipartite_layout(G.GetNxGraph(), G.left)
+for i in range(N):
+    Gs[i].Draw(ax=axes[i], pos=pos)
+    axes[i].set_title(str(i))
+plt.tight_layout()
 plt.show()
